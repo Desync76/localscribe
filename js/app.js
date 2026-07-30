@@ -340,10 +340,14 @@ function download(format) {
 }
 
 async function copyText() {
+  // On mémorise le libellé d'origine plutôt que de le réécrire en dur : il
+  // doit survivre à un changement de formulation dans le HTML.
+  const label = els.copyBtn.dataset.label ??= els.copyBtn.textContent;
+
   try {
     await navigator.clipboard.writeText(EXPORTERS.txt.build(state.chunks));
-    els.copyBtn.textContent = 'Copié !';
-    setTimeout(() => { els.copyBtn.textContent = 'Copier le texte'; }, 1800);
+    els.copyBtn.textContent = 'Copié';
+    setTimeout(() => { els.copyBtn.textContent = label; }, 1800);
   } catch {
     showError("Ton navigateur a refusé l'accès au presse-papiers.");
   }
