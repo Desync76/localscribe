@@ -1,15 +1,14 @@
 /**
  * Internationalisation.
  *
- * L'anglais est la langue de repli ; le français s'active si le navigateur le
- * réclame. La détection se fait uniquement sur `navigator.languages`, jamais
- * sur l'adresse IP : c'est la préférence déclarée de la personne, c'est plus
- * fiable qu'une géolocalisation, et ça ne demande aucun service tiers.
+ * La langue est choisie pour la personne, sans rien lui demander : l'anglais
+ * sert de repli, le français s'active si le navigateur le réclame.
  *
- * Un choix manuel est mémorisé et prime sur la détection.
+ * La détection lit uniquement `navigator.languages`, jamais l'adresse IP.
+ * C'est la préférence que la personne a elle-même déclarée dans son
+ * navigateur : plus fiable qu'une géolocalisation — quelqu'un en déplacement
+ * garde sa langue — et sans aucun service tiers à interroger.
  */
-
-const STORAGE_KEY = 'localscribe-lang';
 
 export const LOCALES = {
   en: {
@@ -19,7 +18,6 @@ export const LOCALES = {
 
     'header.tagline': 'Local transcription',
     'header.theme': 'Switch theme',
-    'header.language': 'Language',
 
     'hero.kicker': 'No upload · No account · No limits',
     'hero.title': 'Your videos<br>into subtitles,<br><em>without leaving<br>your machine.</em>',
@@ -125,7 +123,6 @@ export const LOCALES = {
 
     'header.tagline': 'Transcription locale',
     'header.theme': 'Changer de thème',
-    'header.language': 'Langue',
 
     'hero.kicker': 'Aucun envoi · Aucun compte · Aucune limite',
     'hero.title': 'Tes vidéos<br>en sous-titres,<br><em>sans quitter<br>ta machine.</em>',
@@ -236,9 +233,6 @@ let current = FALLBACK;
  * « fr », d'où la comparaison sur la sous-balise primaire.
  */
 export function detectLanguage() {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored && SUPPORTED.includes(stored)) return stored;
-
   const preferences = navigator.languages?.length
     ? navigator.languages
     : [navigator.language].filter(Boolean);
@@ -251,17 +245,11 @@ export function detectLanguage() {
   return FALLBACK;
 }
 
-export function getLanguage() {
-  return current;
-}
-
-/** Change la langue et met à jour la page. `persist` mémorise le choix. */
-export function setLanguage(lang, { persist = false } = {}) {
+/** Applique une langue au document. */
+export function setLanguage(lang) {
   current = SUPPORTED.includes(lang) ? lang : FALLBACK;
-  if (persist) localStorage.setItem(STORAGE_KEY, current);
   document.documentElement.lang = t('html.lang');
   applyTranslations();
-  document.dispatchEvent(new CustomEvent('languagechange'));
 }
 
 /** Traduit une clé, en remplaçant les jetons {nom}. */

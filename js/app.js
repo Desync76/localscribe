@@ -7,10 +7,8 @@ import { decodeAudioFile, formatBytes } from './audio.js';
 import { normalizeChunks, formatDuration, EXPORTERS } from './subtitles.js';
 import { MODELS, getModel, getVariant, formatModelSize } from './models.js';
 import { enhanceSelects } from './select.js';
-import { initCursor, initReveals } from './cursor.js';
-import {
-  t, applyTranslations, detectLanguage, setLanguage, getLanguage, SUPPORTED,
-} from './i18n.js';
+import { initReveals } from './reveal.js';
+import { t, applyTranslations, detectLanguage, setLanguage } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -51,7 +49,6 @@ const els = {
   errorDismiss: $('error-dismiss'),
 
   themeToggle: $('theme-toggle'),
-  langSwitch: $('lang-switch'),
 };
 
 const state = {
@@ -425,40 +422,12 @@ function initTheme() {
 /* Langue                                                               */
 /* ------------------------------------------------------------------ */
 
+/**
+ * La langue est décidée une fois, au chargement, d'après le navigateur.
+ * Personne n'a de bouton à chercher : le site parle déjà la bonne langue.
+ */
 function initLanguage() {
   setLanguage(detectLanguage());
-  renderLangSwitch();
-
-  els.langSwitch.addEventListener('click', (event) => {
-    const btn = event.target.closest('[data-lang]');
-    if (btn) setLanguage(btn.dataset.lang, { persist: true });
-  });
-
-  // Tout ce qui est produit par le script doit être régénéré : les traductions
-  // du HTML statique ne suffisent pas.
-  document.addEventListener('languagechange', () => {
-    renderLangSwitch();
-    renderDevice();
-    renderModelOptions();
-    renderStats();
-    if (state.lastError) {
-      els.errorMessage.textContent =
-        state.lastError.key ? t(state.lastError.key) : state.lastError.raw;
-    }
-  });
-}
-
-function renderLangSwitch() {
-  els.langSwitch.replaceChildren(...SUPPORTED.map((code) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'lang-btn';
-    btn.dataset.lang = code;
-    btn.textContent = code.toUpperCase();
-    btn.classList.toggle('is-active', code === getLanguage());
-    btn.setAttribute('aria-pressed', String(code === getLanguage()));
-    return btn;
-  }));
 }
 
 /* ------------------------------------------------------------------ */
@@ -544,5 +513,4 @@ applyTranslations();
 await initDevice();
 // Les menus sont construits après le premier remplissage des <option>.
 enhanceSelects();
-initCursor();
 initReveals();
