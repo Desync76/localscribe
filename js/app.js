@@ -6,12 +6,22 @@
 import { decodeAudioFile, formatBytes } from './audio.js';
 import { normalizeChunks, formatDuration, EXPORTERS } from './subtitles.js';
 import { MODELS, getVariant, formatModelSize } from './models.js';
+import { fetchRemoteFile, RemoteError } from './remote.js';
 
 const $ = (id) => document.getElementById(id);
 
 const els = {
   dropzone: $('dropzone'),
   fileInput: $('file-input'),
+
+  sourceFile: $('source-file'),
+  sourceUrl: $('source-url'),
+  urlInput: $('url-input'),
+  urlLoad: $('url-load'),
+  urlProgress: $('url-progress'),
+  urlProgressBar: $('url-progress-bar'),
+  urlProgressDetail: $('url-progress-detail'),
+
   fileInfo: $('file-info'),
   fileName: $('file-name'),
   fileDetail: $('file-detail'),
@@ -46,6 +56,7 @@ const els = {
 };
 
 const state = {
+  source: 'file',    // 'file' | 'url'
   file: null,
   audio: null,       // { samples, duration }
   chunks: [],        // segments normalisés
@@ -130,7 +141,8 @@ async function selectFile(file) {
   state.file = file;
   els.fileName.textContent = file.name;
   els.fileDetail.textContent = `${formatBytes(file.size)} · décodage…`;
-  hide(els.dropzone);
+  hide(els.sourceFile);
+  hide(els.sourceUrl);
   show(els.fileInfo);
   els.runBtn.disabled = true;
 
@@ -153,7 +165,63 @@ function clearFile() {
   els.fileInput.value = '';
   els.runBtn.disabled = true;
   hide(els.fileInfo);
-  show(els.dropzone);
+  hide(els.urlProgress);
+  showSource(state.source);
+}
+
+/* ------------------------------------------------------------------ */
+/* Source : appareil ou lien                                            */
+/* ------------------------------------------------------------------ */
+
+/** Affiche le panneau de la source choisie, sauf si un fichier est déjà prêt. */
+function showSource(source) {
+  state.source = source;
+
+  document.querySelectorAll('.source-btn').forEach((btn) => {
+    const active = btn.dataset.source === source;
+    btn.classList.toggle('is-active', active);
+    btn.setAttribute('aria-selected', String(active));
+  });
+
+  const hasFile = Boolean(state.file);
+  els.sourceFile.hidden = hasFile || source !== 'file';
+  els.sourceUrl.hidden = hasFile || source !== 'url';
+}
+
+async function loadFromUrl() {
+  const raw = els.urlInput.value.trim();
+  if (!raw) return;
+
+  hide(els.stepError);
+  hide(els.stepResult);
+  els.urlLoad.disabled = true;
+  els.urlProgressBar.style.width = '0%';
+  els.urlProgressDetail.textContent = 'Connexion…';
+  show(els.urlProgress);
+
+  try {
+    const file = await fetchRemoteFile(raw, ({ loaded, total }) => {
+      els.urlProgressDetail.textContent = total
+        ? `Téléchargement — ${formatBytes(loaded)} / ${formatBytes(total)}`
+        : `Téléchargement — ${formatBytes(loaded)}`;
+      // Sans Content-Length, on ne peut pas calculer de pourcentage : la barre
+      // reste alors en mouvement continu.
+      els.urlProgressBar.classList.toggle('is-indeterminate', !total);
+      if (total) els.urlProgressBar.style.width = `${(loaded / total) * 100}%`;
+    });
+
+    hide(els.urlProgress);
+    els.urlProgressBar.classList.remove('is-indeterminate');
+    await selectFile(file);
+  } catch (error) {
+    hide(els.urlProgress);
+    els.urlProgressBar.classList.remove('is-indeterminate');
+    showError(error instanceof RemoteError
+      ? error.message
+      : `Le téléchargement a échoué : ${error.message}`);
+  } finally {
+    els.urlLoad.disabled = false;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -410,6 +478,18 @@ els.dropzone.addEventListener('drop', (event) => {
   window.addEventListener(name, (event) => event.preventDefault());
 });
 
+document.querySelectorAll('.source-btn').forEach((btn) => {
+  btn.addEventListener('click', () => showSource(btn.dataset.source));
+});
+
+els.urlLoad.addEventListener('click', loadFromUrl);
+els.urlInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    loadFromUrl();
+  }
+});
+
 // Le poids annoncé change avec l'accélération choisie.
 els.device.addEventListener('change', renderModelOptions);
 
@@ -442,3 +522,4 @@ document.querySelectorAll('.tab').forEach((tab) => {
 
 initTheme();
 initDevice();
+showSource('file');

@@ -7,20 +7,30 @@
 <meta name="description" content="Transcris tes vidéos et audios en sous-titres SRT, VTT ou texte. Tout se passe sur ta machine : aucun fichier n'est envoyé sur Internet. Gratuit, sans compte, sans limite.">
 <meta name="color-scheme" content="light dark">
 <link rel="stylesheet" href="./css/style.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230d9488'/><path d='M9 11h14M9 16h14M9 21h9' stroke='white' stroke-width='2.5' stroke-linecap='round'/></svg>">
 </head>
 <body>
+
+<div class="glow" aria-hidden="true"></div>
 
 <header class="site-header">
   <div class="wrap header-inner">
     <a class="brand" href="./">
-      <span class="brand-mark" aria-hidden="true">◖</span>
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="26" height="26">
+          <rect width="32" height="32" rx="8" fill="currentColor"/>
+          <path d="M9 11h14M9 16h14M9 21h9" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </span>
       <span class="brand-name">LocalScribe</span>
     </a>
     <div class="header-actions">
       <a class="ghost-link" href="https://github.com/Desync76/localscribe" target="_blank" rel="noopener">Code source</a>
       <button id="theme-toggle" class="icon-btn" type="button" aria-label="Changer de thème">
-        <span aria-hidden="true">◐</span>
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"/>
+        </svg>
       </button>
     </div>
   </div>
@@ -29,28 +39,75 @@
 <main class="wrap">
 
   <section class="hero">
-    <p class="eyebrow">Aucun envoi · Aucun compte · Aucune limite</p>
+    <p class="eyebrow"><span class="dot" aria-hidden="true"></span> Aucun envoi · Aucun compte · Aucune limite</p>
     <h1>Transforme n'importe quelle vidéo ou audio en&nbsp;sous-titres</h1>
     <p class="lede">
-      Dépose un fichier, récupère un <code>.srt</code>. Le modèle de transcription tourne
-      <strong>sur ta machine</strong>, dans cet onglet — ton fichier ne quitte jamais ton appareil.
+      Dépose un fichier ou colle un lien, récupère un <code>.srt</code>. Le modèle de
+      transcription tourne <strong>sur ta machine</strong>, dans cet onglet — ton fichier
+      ne quitte jamais ton appareil.
     </p>
   </section>
 
-  <!-- ÉTAPE 1 : fichier -->
+  <!-- ÉTAPE 1 : source -->
   <section class="card" id="step-file">
-    <div id="dropzone" class="dropzone" tabindex="0" role="button"
-         aria-label="Déposer un fichier audio ou vidéo, ou cliquer pour parcourir">
-      <div class="dz-icon" aria-hidden="true">⬇</div>
-      <p class="dz-title">Dépose ton fichier ici</p>
-      <p class="dz-sub">ou <span class="fake-link">parcourir</span> — MP3, WAV, M4A, OGG, FLAC, MP4, WebM…</p>
-      <input type="file" id="file-input" accept="audio/*,video/*" hidden>
+    <div class="card-head">
+      <span class="step-badge">1</span>
+      <h2 class="card-title">Ton fichier</h2>
+    </div>
+
+    <div class="source-switch" role="tablist" aria-label="Source du fichier">
+      <button class="source-btn is-active" type="button" role="tab" data-source="file" aria-selected="true">
+        Depuis mon appareil
+      </button>
+      <button class="source-btn" type="button" role="tab" data-source="url" aria-selected="false">
+        Depuis un lien
+      </button>
+    </div>
+
+    <!-- Source : fichier local -->
+    <div id="source-file">
+      <div id="dropzone" class="dropzone" tabindex="0" role="button"
+           aria-label="Déposer un fichier audio ou vidéo, ou cliquer pour parcourir">
+        <svg class="dz-icon" viewBox="0 0 24 24" width="30" height="30" fill="none"
+             stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 15V3M12 15l-4-4M12 15l4-4"/>
+          <path d="M3 15v3a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-3"/>
+        </svg>
+        <p class="dz-title">Dépose ton fichier ici</p>
+        <p class="dz-sub">ou <span class="fake-link">parcourir</span> — MP3, WAV, M4A, OGG, FLAC, MP4, WebM…</p>
+        <input type="file" id="file-input" accept="audio/*,video/*" hidden>
+      </div>
+    </div>
+
+    <!-- Source : lien distant -->
+    <div id="source-url" hidden>
+      <div class="url-row">
+        <input type="url" id="url-input" class="text-input" spellcheck="false"
+               placeholder="https://exemple.com/podcast.mp3" aria-label="Lien vers un fichier audio ou vidéo">
+        <button type="button" class="btn btn-primary" id="url-load">Charger</button>
+      </div>
+      <p class="field-hint url-note">
+        Lien <strong>direct</strong> vers un fichier audio ou vidéo. Le serveur distant doit
+        autoriser le téléchargement depuis un autre site (CORS) — c'est le cas d'archive.org
+        et de la plupart des hébergeurs de fichiers, mais pas de YouTube ni des plateformes
+        de streaming, qui exigeraient un serveur intermédiaire.
+      </p>
+
+      <div id="url-progress" class="url-progress" hidden>
+        <div class="progress-track"><div class="progress-bar" id="url-progress-bar"></div></div>
+        <p class="progress-detail" id="url-progress-detail">Téléchargement…</p>
+      </div>
     </div>
 
     <div id="file-info" class="file-info" hidden>
       <div class="file-meta">
-        <span class="file-icon" aria-hidden="true">♪</span>
-        <div>
+        <span class="file-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
+               stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18V5l10-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>
+          </svg>
+        </span>
+        <div class="file-text">
           <p class="file-name" id="file-name"></p>
           <p class="file-detail" id="file-detail"></p>
         </div>
@@ -61,7 +118,10 @@
 
   <!-- ÉTAPE 2 : réglages -->
   <section class="card" id="step-options">
-    <h2 class="card-title">Réglages</h2>
+    <div class="card-head">
+      <span class="step-badge">2</span>
+      <h2 class="card-title">Réglages</h2>
+    </div>
 
     <div class="options-grid">
       <label class="field">
@@ -117,7 +177,10 @@
 
   <!-- ÉTAPE 3 : progression -->
   <section class="card" id="step-progress" hidden>
-    <h2 class="card-title" id="progress-title">Préparation…</h2>
+    <div class="card-head">
+      <span class="step-badge">3</span>
+      <h2 class="card-title" id="progress-title">Préparation…</h2>
+    </div>
     <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
     <p class="progress-detail" id="progress-detail"></p>
     <div id="download-list" class="download-list"></div>
@@ -127,7 +190,10 @@
   <!-- ÉTAPE 4 : résultat -->
   <section class="card" id="step-result" hidden>
     <div class="result-head">
-      <h2 class="card-title">Résultat</h2>
+      <div class="card-head">
+        <span class="step-badge is-done" aria-hidden="true">✓</span>
+        <h2 class="card-title">Résultat</h2>
+      </div>
       <p class="result-stats" id="result-stats"></p>
     </div>
 
@@ -139,8 +205,8 @@
     </div>
 
     <div class="tabs" role="tablist">
-      <button class="tab is-active" role="tab" data-view="segments">Segments</button>
-      <button class="tab" role="tab" data-view="plain">Texte brut</button>
+      <button class="tab is-active" type="button" role="tab" data-view="segments">Segments</button>
+      <button class="tab" type="button" role="tab" data-view="plain">Texte brut</button>
     </div>
 
     <div id="view-segments" class="segments"></div>
@@ -151,27 +217,36 @@
 
   <!-- ERREUR -->
   <section class="card card-error" id="step-error" hidden>
-    <h2 class="card-title">Une erreur est survenue</h2>
-    <p id="error-message"></p>
+    <div class="card-head">
+      <span class="step-badge is-error" aria-hidden="true">!</span>
+      <h2 class="card-title">Une erreur est survenue</h2>
+    </div>
+    <p class="error-text" id="error-message"></p>
     <button type="button" class="btn btn-quiet" id="error-dismiss">Recommencer</button>
   </section>
 
   <section class="explainer">
     <h2>Pourquoi c'est différent</h2>
     <div class="explainer-grid">
-      <div>
+      <article>
         <h3>Ton fichier reste chez toi</h3>
         <p>Il n'y a pas de serveur. Le modèle est téléchargé dans ton navigateur et le calcul se fait avec ton processeur. Coupe ta connexion après le chargement : ça marche encore.</p>
-      </div>
-      <div>
+      </article>
+      <article>
         <h3>Pas de compte, pas de quota</h3>
         <p>Aucune inscription, aucune limite de durée ou de nombre de fichiers. Transcris un podcast de deux heures si tu veux.</p>
-      </div>
-      <div>
+      </article>
+      <article>
         <h3>Gratuit, et open source</h3>
         <p>Le code tient en quelques fichiers, lisibles et vérifiables. Whisper est un modèle libre publié par OpenAI.</p>
-      </div>
+      </article>
     </div>
+
+    <p class="vibe-note">
+      <strong>Projet vibe codé.</strong> Ce site a été conçu et écrit en binôme avec une IA
+      (Claude&nbsp;Code), du premier fichier au déploiement. Le code est relu, testé et
+      entièrement public — <a href="https://github.com/Desync76/localscribe" target="_blank" rel="noopener">va voir toi-même</a>.
+    </p>
   </section>
 
 </main>
@@ -182,6 +257,8 @@
       LocalScribe · propulsé par
       <a href="https://github.com/huggingface/transformers.js" target="_blank" rel="noopener">transformers.js</a>
       et Whisper · <a href="https://github.com/Desync76/localscribe" target="_blank" rel="noopener">GitHub</a>
+      <br>
+      <span class="footer-vibe">🤖 Vibe codé avec Claude Code</span>
     </p>
   </div>
 </footer>

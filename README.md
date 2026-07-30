@@ -2,11 +2,16 @@
 
 **Transforme n'importe quelle vidéo ou audio en sous-titres — sans rien envoyer sur Internet.**
 
-Dépose un fichier, récupère un `.srt`. Le modèle de transcription (Whisper) est
-téléchargé dans le navigateur et tourne **sur la machine du visiteur**. Aucun
-serveur, aucun compte, aucune limite.
+Dépose un fichier ou colle un lien, récupère un `.srt`. Le modèle de
+transcription (Whisper) est téléchargé dans le navigateur et tourne **sur la
+machine du visiteur**. Aucun serveur, aucun compte, aucune limite.
 
 👉 **[Essayer en ligne](https://desync76.github.io/localscribe/)**
+
+> 🤖 **Projet vibe codé.** Ce dépôt a été conçu et écrit en binôme avec une IA
+> (Claude Code), du premier fichier jusqu'au déploiement. Chaque étape a été
+> testée dans un vrai navigateur avant d'être poussée, et tout est public ici —
+> à lire, critiquer et forker librement.
 
 ---
 
@@ -22,7 +27,8 @@ couper ta connexion : ça continue de marcher.
 
 ## Fonctionnalités
 
-- **Entrée** : MP3, WAV, M4A, OGG, FLAC, MP4, WebM… (audio et vidéo)
+- **Entrée** : MP3, WAV, M4A, OGG, FLAC, MP4, WebM… (audio et vidéo), depuis
+  ton appareil **ou depuis un lien** *(voir la limite ci-dessous)*
 - **Sortie** : `.srt`, `.vtt`, texte brut, ou copie dans le presse-papiers
 - **Langues** : une centaine, avec détection automatique possible
 - **Traduction** vers l'anglais en un clic
@@ -49,6 +55,22 @@ Le détail des quantifications retenues est commenté dans
 l'encodeur reste précis sur les petits modèles et le décodeur passe en `q4`,
 tandis que Turbo utilise `q4f16` — son encodeur pleine précision pèse 2,4 Go,
 inutilisable sur le web.
+
+### Chargement par lien : ce qui marche, ce qui ne marche pas
+
+Un navigateur ne peut lire une ressource d'un autre domaine que si ce domaine
+l'autorise (en-tête CORS). Sans serveur intermédiaire — et il n'y en a pas —
+c'est infranchissable.
+
+| | |
+|---|---|
+| ✅ | Liens **directs** vers un fichier sur un hébergeur permissif : archive.org, la plupart des CDN, ton propre hébergement |
+| ❌ | YouTube, Vimeo, TikTok, Spotify et les autres plateformes de streaming |
+| ❌ | Fichiers derrière une authentification ou un serveur qui n'envoie pas d'en-tête CORS |
+
+Les liens de plateformes sont détectés avant même la requête et reçoivent une
+explication claire plutôt qu'une erreur réseau incompréhensible. Pour ces
+cas-là, télécharge le média sur ton appareil, puis dépose le fichier.
 
 ## Comment ça marche
 
@@ -94,6 +116,7 @@ css/style.css       styles (thème clair/sombre)
 js/app.js           interactions, pilotage du worker, exports
 js/worker.js        chargement du modèle et inférence
 js/models.js        catalogue des modèles (quantifications et poids)
+js/remote.js        chargement d'un média depuis un lien
 js/audio.js         décodage et rééchantillonnage
 js/subtitles.js     génération SRT / VTT / TXT
 ```
