@@ -126,15 +126,49 @@ code {
 
 .masthead-meta { display: flex; align-items: center; gap: 22px; }
 
+/* ---------- Bascule de thème ---------- */
 .theme-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
   background: none;
-  border: none;
-  padding: 4px 0;
+  border: 1px solid transparent;
+  color: var(--ink-soft);
   cursor: pointer;
-  border-bottom: 1px solid transparent;
-  transition: color .15s, border-color .15s;
+  transition: color .2s, border-color .2s;
 }
-.theme-btn:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.theme-btn:hover { color: var(--accent); border-color: var(--rule); }
+
+/* Les deux icônes occupent la même case et se relaient par rotation :
+   celle qui sort pivote et rétrécit, celle qui entre fait l'inverse. */
+.theme-icon { display: block; overflow: visible; }
+
+.icon-sun,
+.icon-moon {
+  transform-origin: 12px 12px;
+  transition: opacity .3s ease, transform .5s cubic-bezier(.34, 1.4, .5, 1);
+}
+
+.icon-sun  { opacity: 1; transform: rotate(0) scale(1); }
+.icon-moon { opacity: 0; transform: rotate(-100deg) scale(.3); }
+
+.sun-rays {
+  transform-origin: 12px 12px;
+  transition: transform .5s cubic-bezier(.34, 1.4, .5, 1);
+}
+.theme-btn:hover .sun-rays { transform: rotate(38deg); }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .icon-sun  { opacity: 0; transform: rotate(100deg) scale(.3); }
+  :root:not([data-theme="light"]) .icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+}
+
+:root[data-theme="dark"] .icon-sun  { opacity: 0; transform: rotate(100deg) scale(.3); }
+:root[data-theme="dark"] .icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+/* En thème sombre forcé, la lune ne doit pas tourner au survol comme le soleil. */
+:root[data-theme="dark"] .theme-btn:hover .sun-rays { transform: none; }
 
 /* ---------- Ouverture ---------- */
 .opening { padding: 84px 0 64px; border-bottom: 1px solid var(--rule); }
@@ -301,9 +335,13 @@ code {
 .file-detail { margin-top: 4px; }
 
 /* ---------- Champs ---------- */
+/* Deux colonnes fixes plutôt qu'un auto-fit : avec quatre champs, l'auto-fit
+   produisait une rangée de trois puis un champ orphelin à côté d'une case
+   vide. Le 2×2 reste équilibré et laisse assez de largeur pour que le nom du
+   modèle ne soit pas tronqué. */
 .fields {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(212px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1px;
   background: var(--rule);
   border: 1px solid var(--rule);
@@ -316,9 +354,17 @@ code {
   gap: 9px;
   padding: 18px 20px;
   background: var(--paper);
+  min-width: 0;
 }
 
-.field-hint { font-size: .755rem; color: var(--ink-faint); line-height: 1.45; }
+/* Hauteur réservée : sans elle, le texte du modèle qui change de longueur
+   ferait sauter la grille à chaque sélection. */
+.field-hint {
+  font-size: .755rem;
+  color: var(--ink-faint);
+  line-height: 1.45;
+  min-height: 2.9em;
+}
 
 select {
   font: inherit;
@@ -550,6 +596,8 @@ select:focus { outline: none; border-bottom-color: var(--accent); }
   .display { margin-bottom: 36px; }
   .hide-sm { display: none; }
   .dropzone { padding: 46px 18px; }
+  .fields { grid-template-columns: 1fr; }
+  .field-hint { min-height: 0; }
   .segment { grid-template-columns: 1fr; gap: 5px; padding: 13px 0; }
   .segment time { padding-top: 0; }
   .action-inline, .chip { flex: 1 1 auto; justify-content: center; }

@@ -5,7 +5,7 @@
 
 import { decodeAudioFile, formatBytes } from './audio.js';
 import { normalizeChunks, formatDuration, EXPORTERS } from './subtitles.js';
-import { MODELS, getVariant, formatModelSize } from './models.js';
+import { MODELS, getModel, getVariant, formatModelSize } from './models.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -18,6 +18,7 @@ const els = {
   fileClear: $('file-clear'),
 
   model: $('opt-model'),
+  modelHint: $('model-hint'),
   language: $('opt-language'),
   task: $('opt-task'),
   device: $('opt-device'),
@@ -100,11 +101,21 @@ function renderModelOptions() {
   els.model.replaceChildren(...MODELS.map((model) => {
     const option = document.createElement('option');
     option.value = model.id;
+    // Libellé court : le menu déroulant ne peut pas être élargi, un texte
+    // long y serait tronqué. Le détail part dans l'aide sous le champ.
     option.textContent =
-      `${model.name} — ${model.note} (${formatModelSize(getVariant(model.id, device).mb)})`;
+      `${model.name} · ${formatModelSize(getVariant(model.id, device).mb)} — ${model.tag}`;
     option.selected = previous ? model.id === previous : Boolean(model.default);
     return option;
   }));
+
+  renderModelHint();
+}
+
+/** Décrit le modèle sélectionné sous le champ. */
+function renderModelHint() {
+  els.modelHint.textContent =
+    `${getModel(els.model.value).note} Téléchargé une fois, puis gardé en cache.`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -416,6 +427,7 @@ els.dropzone.addEventListener('drop', (event) => {
 
 // Le poids annoncé change avec l'accélération choisie.
 els.device.addEventListener('change', renderModelOptions);
+els.model.addEventListener('change', renderModelHint);
 
 els.fileInput.addEventListener('change', () => selectFile(els.fileInput.files[0]));
 els.fileClear.addEventListener('click', clearFile);

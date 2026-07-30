@@ -16,7 +16,23 @@
     <span class="wordmark">LocalScribe</span>
     <div class="masthead-meta">
       <span class="mono-label hide-sm">Transcription locale</span>
-      <button id="theme-toggle" class="theme-btn mono-label" type="button">Thème</button>
+      <button id="theme-toggle" class="theme-btn" type="button" aria-label="Changer de thème">
+        <svg class="theme-icon" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
+          <g class="icon-sun" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+            <circle cx="12" cy="12" r="4.1"/>
+            <g class="sun-rays">
+              <path d="M12 2.2v2.4"/><path d="M12 19.4v2.4"/>
+              <path d="M2.2 12h2.4"/><path d="M19.4 12h2.4"/>
+              <path d="M5.1 5.1l1.7 1.7"/><path d="M17.2 17.2l1.7 1.7"/>
+              <path d="M18.9 5.1l-1.7 1.7"/><path d="M6.8 17.2l-1.7 1.7"/>
+            </g>
+          </g>
+          <g class="icon-moon" fill="none" stroke="currentColor" stroke-width="1.7"
+             stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.5 14.6A8.6 8.6 0 1 1 9.4 3.5a6.9 6.9 0 0 0 11.1 11.1Z"/>
+          </g>
+        </svg>
+      </button>
     </div>
   </div>
 </header>
@@ -96,7 +112,7 @@
           <label class="field">
             <span class="field-label mono-label">Modèle</span>
             <select id="opt-model"></select>
-            <span class="field-hint">Téléchargé une fois, puis gardé en cache.</span>
+            <span class="field-hint" id="model-hint">Téléchargé une fois, puis gardé en cache.</span>
           </label>
 
           <label class="field">
@@ -241,7 +257,7 @@
   <div class="shell endmatter-inner">
     <span class="mono-label">LocalScribe — © 2026</span>
     <span class="mono-label">Whisper · transformers.js</span>
-    <span class="mono-label">Vibe codé avec Claude Code</span>
+    <span class="mono-label">Vibe Codé</span>
   </div>
 </footer>
 
