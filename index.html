@@ -42,9 +42,9 @@
     <p class="eyebrow"><span class="dot" aria-hidden="true"></span> Aucun envoi · Aucun compte · Aucune limite</p>
     <h1>Transforme n'importe quelle vidéo ou audio en&nbsp;sous-titres</h1>
     <p class="lede">
-      Dépose un fichier ou colle un lien, récupère un <code>.srt</code>. Le modèle de
-      transcription tourne <strong>sur ta machine</strong>, dans cet onglet — ton fichier
-      ne quitte jamais ton appareil.
+      Dépose un fichier, récupère un <code>.srt</code>. Le modèle de transcription tourne
+      <strong>sur ta machine</strong>, dans cet onglet — ton fichier ne quitte jamais
+      ton appareil.
     </p>
   </section>
 
@@ -55,48 +55,16 @@
       <h2 class="card-title">Ton fichier</h2>
     </div>
 
-    <div class="source-switch" role="tablist" aria-label="Source du fichier">
-      <button class="source-btn is-active" type="button" role="tab" data-source="file" aria-selected="true">
-        Depuis mon appareil
-      </button>
-      <button class="source-btn" type="button" role="tab" data-source="url" aria-selected="false">
-        Depuis un lien
-      </button>
-    </div>
-
-    <!-- Source : fichier local -->
-    <div id="source-file">
-      <div id="dropzone" class="dropzone" tabindex="0" role="button"
-           aria-label="Déposer un fichier audio ou vidéo, ou cliquer pour parcourir">
-        <svg class="dz-icon" viewBox="0 0 24 24" width="30" height="30" fill="none"
-             stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 15V3M12 15l-4-4M12 15l4-4"/>
-          <path d="M3 15v3a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-3"/>
-        </svg>
-        <p class="dz-title">Dépose ton fichier ici</p>
-        <p class="dz-sub">ou <span class="fake-link">parcourir</span> — MP3, WAV, M4A, OGG, FLAC, MP4, WebM…</p>
-        <input type="file" id="file-input" accept="audio/*,video/*" hidden>
-      </div>
-    </div>
-
-    <!-- Source : lien distant -->
-    <div id="source-url" hidden>
-      <div class="url-row">
-        <input type="url" id="url-input" class="text-input" spellcheck="false"
-               placeholder="https://exemple.com/podcast.mp3" aria-label="Lien vers un fichier audio ou vidéo">
-        <button type="button" class="btn btn-primary" id="url-load">Charger</button>
-      </div>
-      <p class="field-hint url-note">
-        Lien <strong>direct</strong> vers un fichier audio ou vidéo. Le serveur distant doit
-        autoriser le téléchargement depuis un autre site (CORS) — c'est le cas d'archive.org
-        et de la plupart des hébergeurs de fichiers, mais pas de YouTube ni des plateformes
-        de streaming, qui exigeraient un serveur intermédiaire.
-      </p>
-
-      <div id="url-progress" class="url-progress" hidden>
-        <div class="progress-track"><div class="progress-bar" id="url-progress-bar"></div></div>
-        <p class="progress-detail" id="url-progress-detail">Téléchargement…</p>
-      </div>
+    <div id="dropzone" class="dropzone" tabindex="0" role="button"
+         aria-label="Déposer un fichier audio ou vidéo, ou cliquer pour parcourir">
+      <svg class="dz-icon" viewBox="0 0 24 24" width="30" height="30" fill="none"
+           stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 15V3M12 15l-4-4M12 15l4-4"/>
+        <path d="M3 15v3a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-3"/>
+      </svg>
+      <p class="dz-title">Dépose ton fichier ici</p>
+      <p class="dz-sub">ou <span class="fake-link">parcourir</span> — MP3, WAV, M4A, OGG, FLAC, MP4, WebM…</p>
+      <input type="file" id="file-input" accept="audio/*,video/*" hidden>
     </div>
 
     <div id="file-info" class="file-info" hidden>

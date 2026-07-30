@@ -280,36 +280,6 @@ code {
 .card-error { border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
 .error-text { margin: 0 0 16px; color: var(--text-soft); }
 
-/* ---------- Sélecteur de source ---------- */
-.source-switch {
-  display: inline-flex;
-  gap: 3px;
-  padding: 3px;
-  margin-bottom: 18px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 11px;
-}
-
-.source-btn {
-  font: inherit;
-  font-size: .855rem;
-  font-weight: 560;
-  color: var(--text-soft);
-  background: none;
-  border: none;
-  padding: 7px 15px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: color .15s, background .15s, box-shadow .15s;
-}
-.source-btn:hover { color: var(--text); }
-.source-btn.is-active {
-  background: var(--surface);
-  color: var(--accent-ink);
-  box-shadow: var(--shadow-sm);
-}
-
 /* ---------- Zone de dépôt ---------- */
 .dropzone {
   display: grid;
@@ -335,34 +305,6 @@ code {
 .dz-title { margin: 0 0 5px; font-weight: 610; font-size: 1rem; }
 .dz-sub { margin: 0; color: var(--text-soft); font-size: .87rem; }
 .fake-link { color: var(--accent-ink); font-weight: 560; text-decoration: underline; }
-
-/* ---------- Source : lien ---------- */
-.url-row { display: flex; gap: 9px; flex-wrap: wrap; }
-
-.text-input {
-  flex: 1 1 240px;
-  min-width: 0;
-  font: inherit;
-  font-size: .92rem;
-  color: var(--text);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 11px 13px;
-  transition: border-color .15s, box-shadow .15s, background .15s;
-}
-.text-input::placeholder { color: var(--text-soft); opacity: .75; }
-.text-input:focus {
-  outline: none;
-  background: var(--surface);
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-ring);
-}
-
-.url-note { margin: 12px 0 0; }
-
-.url-progress { margin-top: 16px; }
-.url-progress .progress-detail { margin-bottom: 0; }
 
 /* ---------- Fichier sélectionné ---------- */
 .file-info {
@@ -645,9 +587,6 @@ select:focus {
   .hero { padding: 40px 0 28px; }
   .card { padding: 19px; }
   .dropzone { padding: 36px 16px; }
-  .source-switch { display: flex; width: 100%; }
-  .source-btn { flex: 1; }
-  .url-row .btn { flex: 1 1 auto; }
   .segment { grid-template-columns: 1fr; gap: 3px; }
   .segment time { padding-top: 0; }
   .export-row .btn { flex: 1 1 auto; }
