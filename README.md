@@ -26,11 +26,29 @@ couper ta connexion : ça continue de marcher.
 - **Sortie** : `.srt`, `.vtt`, texte brut, ou copie dans le presse-papiers
 - **Langues** : une centaine, avec détection automatique possible
 - **Traduction** vers l'anglais en un clic
-- **4 modèles** au choix, de Tiny (~40 Mo, instantané) à Large v3 Turbo
-  (~800 Mo, qualité maximale)
+- **4 modèles** au choix, de Tiny à Large v3 Turbo
 - **Accélération WebGPU** quand le navigateur la propose, repli automatique sur
   le processeur sinon
 - Interface responsive, thème clair/sombre
+
+### Modèles et poids réels
+
+Le poids téléchargé dépend de l'accélération : le GPU charge des poids plus
+précis que le CPU. L'interface affiche la taille correspondant au réglage
+choisi, et le modèle est mis en cache après le premier chargement.
+
+| Modèle | CPU (q8) | WebGPU |
+|---|---:|---:|
+| Tiny | 39 Mo | 114 Mo |
+| **Base** *(défaut)* | **73 Mo** | **197 Mo** |
+| Small | 237 Mo | 391 Mo |
+| Large v3 Turbo | 1,0 Go | 537 Mo |
+
+Le détail des quantifications retenues est commenté dans
+[`js/models.js`](js/models.js). En résumé : `q8` partout sur CPU ; sur GPU
+l'encodeur reste précis sur les petits modèles et le décodeur passe en `q4`,
+tandis que Turbo utilise `q4f16` — son encodeur pleine précision pèse 2,4 Go,
+inutilisable sur le web.
 
 ## Comment ça marche
 
@@ -75,6 +93,7 @@ index.html          interface
 css/style.css       styles (thème clair/sombre)
 js/app.js           interactions, pilotage du worker, exports
 js/worker.js        chargement du modèle et inférence
+js/models.js        catalogue des modèles (quantifications et poids)
 js/audio.js         décodage et rééchantillonnage
 js/subtitles.js     génération SRT / VTT / TXT
 ```

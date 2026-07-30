@@ -17,8 +17,10 @@ env.allowLocalModels = false;
 /** Le pipeline est coûteux à construire : on le garde entre deux fichiers. */
 let cached = { key: null, instance: null };
 
-async function getTranscriber(model, device, onProgress) {
-  const key = `${model}::${device}`;
+async function getTranscriber(model, device, dtype, onProgress) {
+  // Le dtype fait partie de la clé : deux devices ne chargent pas les mêmes
+  // poids, réutiliser l'instance donnerait des résultats incohérents.
+  const key = `${model}::${device}::${JSON.stringify(dtype)}`;
   if (cached.key === key && cached.instance) return cached.instance;
 
   // Un changement de modèle rend l'ancien inutile : on libère la mémoire GPU.
@@ -29,11 +31,7 @@ async function getTranscriber(model, device, onProgress) {
 
   const instance = await pipeline('automatic-speech-recognition', model, {
     device,
-    // Sur GPU l'encodeur reste en fp32 (sensible à la précision) tandis que le
-    // décodeur, bien plus gros, est quantifié. Sur CPU, q8 partout.
-    dtype: device === 'webgpu'
-      ? { encoder_model: 'fp32', decoder_model_merged: 'q4' }
-      : 'q8',
+    dtype,
     progress_callback: onProgress,
   });
 
@@ -45,10 +43,10 @@ self.addEventListener('message', async (event) => {
   const { type, payload } = event.data;
   if (type !== 'transcribe') return;
 
-  const { samples, model, device, language, task } = payload;
+  const { samples, model, device, dtype, language, task } = payload;
 
   try {
-    const transcriber = await getTranscriber(model, device, (progress) => {
+    const transcriber = await getTranscriber(model, device, dtype, (progress) => {
       self.postMessage({ type: 'load-progress', payload: progress });
     });
 

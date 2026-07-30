@@ -5,6 +5,7 @@
 
 import { decodeAudioFile, formatBytes } from './audio.js';
 import { normalizeChunks, formatDuration, EXPORTERS } from './subtitles.js';
+import { MODELS, getVariant, formatModelSize } from './models.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -76,6 +77,8 @@ async function initDevice() {
   if (!state.webgpu) {
     els.device.querySelector('option[value="webgpu"]').disabled = true;
   }
+
+  renderModelOptions();
 }
 
 /** Résout le choix « Automatique » en device concret. */
@@ -83,6 +86,25 @@ function resolveDevice() {
   const choice = els.device.value;
   if (choice === 'auto') return state.webgpu ? 'webgpu' : 'wasm';
   return choice;
+}
+
+/**
+ * (Re)construit la liste des modèles. Le poids annoncé dépend du device, donc
+ * la liste est régénérée à chaque changement d'accélération — afficher une
+ * taille CPU alors que le GPU en téléchargera trois fois plus serait mensonger.
+ */
+function renderModelOptions() {
+  const device = resolveDevice();
+  const previous = els.model.value;
+
+  els.model.replaceChildren(...MODELS.map((model) => {
+    const option = document.createElement('option');
+    option.value = model.id;
+    option.textContent =
+      `${model.name} — ${model.note} (${formatModelSize(getVariant(model.id, device).mb)})`;
+    option.selected = previous ? model.id === previous : Boolean(model.default);
+    return option;
+  }));
 }
 
 /* ------------------------------------------------------------------ */
@@ -188,14 +210,20 @@ function run() {
 
   state.worker ??= createWorker();
 
-  // Le buffer est transféré (et non copié) : pas de doublon en mémoire.
-  const samples = state.audio.samples;
+  const device = resolveDevice();
+  const variant = getVariant(els.model.value, device);
+
+  els.progressDetail.textContent =
+    `Au premier lancement, ${formatModelSize(variant.mb)} sont téléchargés puis ` +
+    'gardés en cache par le navigateur.';
+
   state.worker.postMessage({
     type: 'transcribe',
     payload: {
-      samples,
+      samples: state.audio.samples,
       model: els.model.value,
-      device: resolveDevice(),
+      device,
+      dtype: variant.dtype,
       language: els.language.value,
       task: els.task.value,
     },
@@ -381,6 +409,9 @@ els.dropzone.addEventListener('drop', (event) => {
 ['dragover', 'drop'].forEach((name) => {
   window.addEventListener(name, (event) => event.preventDefault());
 });
+
+// Le poids annoncé change avec l'accélération choisie.
+els.device.addEventListener('change', renderModelOptions);
 
 els.fileInput.addEventListener('change', () => selectFile(els.fileInput.files[0]));
 els.fileClear.addEventListener('click', clearFile);
