@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LocalScribe — Sous-titres automatiques, 100 % dans ton navigateur</title>
+<meta name="description" content="Transcris tes vidéos et audios en sous-titres SRT, VTT ou texte. Tout se passe sur ta machine : aucun fichier n'est envoyé sur Internet. Gratuit, sans compte, sans limite.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="./css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="./">
+      <span class="brand-mark" aria-hidden="true">◖</span>
+      <span class="brand-name">LocalScribe</span>
+    </a>
+    <div class="header-actions">
+      <a class="ghost-link" href="https://github.com/Desync76/localscribe" target="_blank" rel="noopener">Code source</a>
+      <button id="theme-toggle" class="icon-btn" type="button" aria-label="Changer de thème">
+        <span aria-hidden="true">◐</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="hero">
+    <p class="eyebrow">Aucun envoi · Aucun compte · Aucune limite</p>
+    <h1>Transforme n'importe quelle vidéo ou audio en&nbsp;sous-titres</h1>
+    <p class="lede">
+      Dépose un fichier, récupère un <code>.srt</code>. Le modèle de transcription tourne
+      <strong>sur ta machine</strong>, dans cet onglet — ton fichier ne quitte jamais ton appareil.
+    </p>
+  </section>
+
+  <!-- ÉTAPE 1 : fichier -->
+  <section class="card" id="step-file">
+    <div id="dropzone" class="dropzone" tabindex="0" role="button"
+         aria-label="Déposer un fichier audio ou vidéo, ou cliquer pour parcourir">
+      <div class="dz-icon" aria-hidden="true">⬇</div>
+      <p class="dz-title">Dépose ton fichier ici</p>
+      <p class="dz-sub">ou <span class="fake-link">parcourir</span> — MP3, WAV, M4A, OGG, FLAC, MP4, WebM…</p>
+      <input type="file" id="file-input" accept="audio/*,video/*" hidden>
+    </div>
+
+    <div id="file-info" class="file-info" hidden>
+      <div class="file-meta">
+        <span class="file-icon" aria-hidden="true">♪</span>
+        <div>
+          <p class="file-name" id="file-name"></p>
+          <p class="file-detail" id="file-detail"></p>
+        </div>
+      </div>
+      <button type="button" class="btn btn-quiet" id="file-clear">Changer</button>
+    </div>
+  </section>
+
+  <!-- ÉTAPE 2 : réglages -->
+  <section class="card" id="step-options">
+    <h2 class="card-title">Réglages</h2>
+
+    <div class="options-grid">
+      <label class="field">
+        <span class="field-label">Modèle</span>
+        <select id="opt-model">
+          <option value="onnx-community/whisper-tiny">Tiny — ultra rapide (~40 Mo)</option>
+          <option value="onnx-community/whisper-base" selected>Base — équilibré (~80 Mo)</option>
+          <option value="onnx-community/whisper-small">Small — précis (~250 Mo)</option>
+          <option value="onnx-community/whisper-large-v3-turbo">Large v3 Turbo — le meilleur (~800 Mo, WebGPU conseillé)</option>
+        </select>
+        <span class="field-hint">Téléchargé une seule fois, puis gardé en cache.</span>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Langue parlée</span>
+        <select id="opt-language">
+          <option value="">Détection automatique</option>
+          <option value="fr" selected>Français</option>
+          <option value="en">Anglais</option>
+          <option value="es">Espagnol</option>
+          <option value="de">Allemand</option>
+          <option value="it">Italien</option>
+          <option value="pt">Portugais</option>
+          <option value="nl">Néerlandais</option>
+          <option value="ru">Russe</option>
+          <option value="ar">Arabe</option>
+          <option value="ja">Japonais</option>
+          <option value="ko">Coréen</option>
+          <option value="zh">Chinois</option>
+        </select>
+        <span class="field-hint">Préciser la langue améliore nettement le résultat.</span>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Tâche</span>
+        <select id="opt-task">
+          <option value="transcribe" selected>Transcrire (garder la langue)</option>
+          <option value="translate">Traduire vers l'anglais</option>
+        </select>
+        <span class="field-hint">Whisper ne traduit que vers l'anglais.</span>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Accélération</span>
+        <select id="opt-device">
+          <option value="auto" selected>Automatique</option>
+          <option value="webgpu">WebGPU (carte graphique)</option>
+          <option value="wasm">CPU (compatible partout)</option>
+        </select>
+        <span class="field-hint" id="device-hint">Détection en cours…</span>
+      </label>
+    </div>
+
+    <button type="button" class="btn btn-primary btn-lg" id="run-btn" disabled>
+      Lancer la transcription
+    </button>
+  </section>
+
+  <!-- ÉTAPE 3 : progression -->
+  <section class="card" id="step-progress" hidden>
+    <h2 class="card-title" id="progress-title">Préparation…</h2>
+    <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+    <p class="progress-detail" id="progress-detail"></p>
+    <div id="download-list" class="download-list"></div>
+    <button type="button" class="btn btn-quiet" id="cancel-btn">Annuler</button>
+  </section>
+
+  <!-- ÉTAPE 4 : résultat -->
+  <section class="card" id="step-result" hidden>
+    <div class="result-head">
+      <h2 class="card-title">Résultat</h2>
+      <p class="result-stats" id="result-stats"></p>
+    </div>
+
+    <div class="export-row">
+      <button type="button" class="btn btn-primary" data-export="srt">Télécharger .srt</button>
+      <button type="button" class="btn" data-export="vtt">.vtt</button>
+      <button type="button" class="btn" data-export="txt">.txt</button>
+      <button type="button" class="btn btn-quiet" id="copy-btn">Copier le texte</button>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab is-active" role="tab" data-view="segments">Segments</button>
+      <button class="tab" role="tab" data-view="plain">Texte brut</button>
+    </div>
+
+    <div id="view-segments" class="segments"></div>
+    <pre id="view-plain" class="plain-text" hidden></pre>
+
+    <button type="button" class="btn btn-quiet" id="restart-btn">Transcrire un autre fichier</button>
+  </section>
+
+  <!-- ERREUR -->
+  <section class="card card-error" id="step-error" hidden>
+    <h2 class="card-title">Une erreur est survenue</h2>
+    <p id="error-message"></p>
+    <button type="button" class="btn btn-quiet" id="error-dismiss">Recommencer</button>
+  </section>
+
+  <section class="explainer">
+    <h2>Pourquoi c'est différent</h2>
+    <div class="explainer-grid">
+      <div>
+        <h3>Ton fichier reste chez toi</h3>
+        <p>Il n'y a pas de serveur. Le modèle est téléchargé dans ton navigateur et le calcul se fait avec ton processeur. Coupe ta connexion après le chargement : ça marche encore.</p>
+      </div>
+      <div>
+        <h3>Pas de compte, pas de quota</h3>
+        <p>Aucune inscription, aucune limite de durée ou de nombre de fichiers. Transcris un podcast de deux heures si tu veux.</p>
+      </div>
+      <div>
+        <h3>Gratuit, et open source</h3>
+        <p>Le code tient en quelques fichiers, lisibles et vérifiables. Whisper est un modèle libre publié par OpenAI.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>
+      LocalScribe · propulsé par
+      <a href="https://github.com/huggingface/transformers.js" target="_blank" rel="noopener">transformers.js</a>
+      et Whisper · <a href="https://github.com/Desync76/localscribe" target="_blank" rel="noopener">GitHub</a>
+    </p>
+  </div>
+</footer>
+
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>

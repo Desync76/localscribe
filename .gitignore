@@ -1,0 +1,10 @@
+# Outils locaux
+.claude/
+node_modules/
+
+# Fichiers de test
+_test-*
+
+# Système
+.DS_Store
+Thumbs.db
