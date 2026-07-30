@@ -6,6 +6,11 @@
 import { decodeAudioFile, formatBytes } from './audio.js';
 import { normalizeChunks, formatDuration, EXPORTERS } from './subtitles.js';
 import { MODELS, getModel, getVariant, formatModelSize } from './models.js';
+import { enhanceSelects } from './select.js';
+import { initCursor, initReveals } from './cursor.js';
+import {
+  t, applyTranslations, detectLanguage, setLanguage, getLanguage, SUPPORTED,
+} from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -23,6 +28,8 @@ const els = {
   task: $('opt-task'),
   device: $('opt-device'),
   deviceHint: $('device-hint'),
+  deviceBadge: $('device-badge'),
+  summaryLine: $('summary-line'),
   runBtn: $('run-btn'),
 
   stepProgress: $('step-progress'),
@@ -44,6 +51,7 @@ const els = {
   errorDismiss: $('error-dismiss'),
 
   themeToggle: $('theme-toggle'),
+  langSwitch: $('lang-switch'),
 };
 
 const state = {
@@ -53,6 +61,7 @@ const state = {
   worker: null,
   webgpu: false,
   downloads: new Map(),
+  lastError: null,   // { key } ou { raw } — rejoué au changement de langue
 };
 
 /* ------------------------------------------------------------------ */
@@ -71,14 +80,11 @@ async function detectWebGPU() {
 async function initDevice() {
   state.webgpu = await detectWebGPU();
 
-  els.deviceHint.textContent = state.webgpu
-    ? 'WebGPU détecté — beaucoup plus rapide.'
-    : "WebGPU indisponible ici : le calcul se fera sur le processeur.";
-
   if (!state.webgpu) {
     els.device.querySelector('option[value="webgpu"]').disabled = true;
   }
 
+  renderDevice();
   renderModelOptions();
 }
 
@@ -88,6 +94,16 @@ function resolveDevice() {
   if (choice === 'auto') return state.webgpu ? 'webgpu' : 'wasm';
   return choice;
 }
+
+function renderDevice() {
+  els.deviceHint.textContent = state.webgpu ? t('device.detected') : t('device.unavailable');
+  els.deviceBadge.textContent =
+    resolveDevice() === 'webgpu' ? t('device.badge.webgpu') : t('device.badge.cpu');
+}
+
+/* ------------------------------------------------------------------ */
+/* Modèles                                                              */
+/* ------------------------------------------------------------------ */
 
 /**
  * (Re)construit la liste des modèles. Le poids annoncé dépend du device, donc
@@ -101,21 +117,31 @@ function renderModelOptions() {
   els.model.replaceChildren(...MODELS.map((model) => {
     const option = document.createElement('option');
     option.value = model.id;
-    // Libellé court : le menu déroulant ne peut pas être élargi, un texte
-    // long y serait tronqué. Le détail part dans l'aide sous le champ.
+    // Libellé court : le détail part dans l'aide sous le champ.
     option.textContent =
-      `${model.name} · ${formatModelSize(getVariant(model.id, device).mb)} — ${model.tag}`;
+      `${model.name} · ${formatModelSize(getVariant(model.id, device).mb)} — ${t(`model.${model.key}.tag`)}`;
     option.selected = previous ? model.id === previous : Boolean(model.default);
     return option;
   }));
 
   renderModelHint();
+  renderSummary();
 }
 
-/** Décrit le modèle sélectionné sous le champ. */
 function renderModelHint() {
-  els.modelHint.textContent =
-    `${getModel(els.model.value).note} Téléchargé une fois, puis gardé en cache.`;
+  const model = getModel(els.model.value);
+  els.modelHint.textContent = `${t(`model.${model.key}.note`)} ${t('field.model.cache')}`;
+}
+
+/** Rappel des réglages courants sous l'outil, pour éviter d'aller les chercher. */
+function renderSummary() {
+  const model = getModel(els.model.value);
+  const size = formatModelSize(getVariant(model.id, resolveDevice()).mb);
+
+  els.summaryLine.textContent = t('tool.defaults', {
+    model: `${model.name} · ${size}`,
+    language: els.language.value ? t(`lang.${els.language.value}`) : t('lang.auto'),
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -131,7 +157,7 @@ async function selectFile(file) {
   if (!file) return;
 
   if (!isMediaFile(file)) {
-    showError("Ce fichier n'a pas l'air d'être un audio ou une vidéo.");
+    showError({ key: 'err.notMedia' });
     return;
   }
 
@@ -140,7 +166,7 @@ async function selectFile(file) {
 
   state.file = file;
   els.fileName.textContent = file.name;
-  els.fileDetail.textContent = `${formatBytes(file.size)} · décodage…`;
+  els.fileDetail.textContent = formatBytes(file.size);
   hide(els.dropzone);
   show(els.fileInfo);
   els.runBtn.disabled = true;
@@ -154,7 +180,8 @@ async function selectFile(file) {
     els.runBtn.disabled = false;
   } catch (error) {
     clearFile();
-    showError(error.message);
+    // Les modules bas niveau renvoient une clé, pas une phrase.
+    showError({ key: error.message });
   }
 }
 
@@ -174,8 +201,8 @@ function clearFile() {
 function createWorker() {
   const worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
   worker.addEventListener('message', onWorkerMessage);
-  worker.addEventListener('error', (event) => {
-    showError(event.message || 'Le moteur de transcription a planté au démarrage.');
+  worker.addEventListener('error', () => {
+    showError({ key: 'err.workerBoot' });
     hide(els.stepProgress);
   });
   return worker;
@@ -187,9 +214,8 @@ function onWorkerMessage(event) {
   if (type === 'load-progress') {
     renderLoadProgress(payload);
   } else if (type === 'transcribe-start') {
-    els.progressTitle.textContent = 'Transcription en cours…';
-    els.progressDetail.textContent =
-      'Le temps de traitement dépend de la longueur du fichier et de ta machine.';
+    els.progressTitle.textContent = t('progress.transcribing');
+    els.progressDetail.textContent = t('progress.timeNote');
     els.downloadList.replaceChildren();
     els.progressBar.style.width = '';
     els.progressBar.classList.add('is-indeterminate');
@@ -200,7 +226,7 @@ function onWorkerMessage(event) {
   } else if (type === 'error') {
     els.progressBar.classList.remove('is-indeterminate');
     hide(els.stepProgress);
-    showError(payload.message);
+    showError(payload);
   }
 }
 
@@ -211,23 +237,20 @@ function run() {
   hide(els.stepError);
   show(els.stepProgress);
 
+  const device = resolveDevice();
+  const variant = getVariant(els.model.value, device);
+
   state.downloads.clear();
   els.downloadList.replaceChildren();
   els.progressBar.classList.remove('is-indeterminate');
   els.progressBar.style.width = '0%';
-  els.progressTitle.textContent = 'Chargement du modèle…';
+  els.progressTitle.textContent = t('progress.loadingModel');
   els.progressDetail.textContent =
-    'Au premier lancement, le modèle est téléchargé puis gardé en cache.';
+    t('progress.modelSize', { size: formatModelSize(variant.mb) });
+
+  els.stepProgress.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
   state.worker ??= createWorker();
-
-  const device = resolveDevice();
-  const variant = getVariant(els.model.value, device);
-
-  els.progressDetail.textContent =
-    `Au premier lancement, ${formatModelSize(variant.mb)} sont téléchargés puis ` +
-    'gardés en cache par le navigateur.';
-
   state.worker.postMessage({
     type: 'transcribe',
     payload: {
@@ -264,7 +287,7 @@ function renderLoadProgress({ status, file, progress, loaded, total }) {
 
   const entries = [...state.downloads.entries()];
 
-  const rows = entries.map(([name, info]) => {
+  els.downloadList.replaceChildren(...entries.map(([name, info]) => {
     const row = document.createElement('div');
     row.className = 'download-row';
 
@@ -278,9 +301,7 @@ function renderLoadProgress({ status, file, progress, loaded, total }) {
 
     row.append(label, value);
     return row;
-  });
-
-  els.downloadList.replaceChildren(...rows);
+  }));
 
   const average = entries.length
     ? entries.reduce((sum, [, info]) => sum + info.progress, 0) / entries.length
@@ -292,19 +313,17 @@ function renderResult({ chunks }) {
   state.chunks = normalizeChunks(chunks, state.audio?.duration ?? 0);
 
   if (state.chunks.length === 0) {
-    showError("Aucune parole n'a été détectée dans ce fichier.");
+    showError({ key: 'err.noSpeech' });
     return;
   }
 
-  const words = state.chunks.reduce(
-    (sum, chunk) => sum + chunk.text.split(/\s+/).filter(Boolean).length, 0
-  );
-  els.resultStats.textContent =
-    `${state.chunks.length} segments · ${words} mots · ${formatDuration(state.audio.duration)}`;
+  renderStats();
 
-  els.viewSegments.replaceChildren(...state.chunks.map((chunk) => {
+  els.viewSegments.replaceChildren(...state.chunks.map((chunk, index) => {
     const row = document.createElement('div');
     row.className = 'segment';
+    // Décalage progressif : les segments apparaissent en cascade.
+    row.style.setProperty('--i', String(Math.min(index, 12)));
 
     const time = document.createElement('time');
     time.textContent = `${formatDuration(chunk.start)} → ${formatDuration(chunk.end)}`;
@@ -322,8 +341,24 @@ function renderResult({ chunks }) {
   els.stepResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function showError(message) {
-  els.errorMessage.textContent = message;
+function renderStats() {
+  if (state.chunks.length === 0) return;
+
+  const words = state.chunks.reduce(
+    (sum, chunk) => sum + chunk.text.split(/\s+/).filter(Boolean).length, 0
+  );
+
+  els.resultStats.textContent = t('result.stats', {
+    segments: state.chunks.length,
+    words,
+    duration: formatDuration(state.audio?.duration ?? 0),
+  });
+}
+
+/** `error` est { key } (traduisible) ou { raw } (message technique brut). */
+function showError(error) {
+  state.lastError = error;
+  els.errorMessage.textContent = error.key ? t(error.key) : error.raw;
   show(els.stepError);
   els.stepError.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
@@ -351,16 +386,12 @@ function download(format) {
 }
 
 async function copyText() {
-  // On mémorise le libellé d'origine plutôt que de le réécrire en dur : il
-  // doit survivre à un changement de formulation dans le HTML.
-  const label = els.copyBtn.dataset.label ??= els.copyBtn.textContent;
-
   try {
     await navigator.clipboard.writeText(EXPORTERS.txt.build(state.chunks));
-    els.copyBtn.textContent = 'Copié';
-    setTimeout(() => { els.copyBtn.textContent = label; }, 1800);
+    els.copyBtn.textContent = t('result.copied');
+    setTimeout(() => { els.copyBtn.textContent = t('result.copy'); }, 1800);
   } catch {
-    showError("Ton navigateur a refusé l'accès au presse-papiers.");
+    showError({ key: 'err.clipboard' });
   }
 }
 
@@ -388,6 +419,46 @@ function initTheme() {
     document.documentElement.dataset.theme = next;
     localStorage.setItem('localscribe-theme', next);
   });
+}
+
+/* ------------------------------------------------------------------ */
+/* Langue                                                               */
+/* ------------------------------------------------------------------ */
+
+function initLanguage() {
+  setLanguage(detectLanguage());
+  renderLangSwitch();
+
+  els.langSwitch.addEventListener('click', (event) => {
+    const btn = event.target.closest('[data-lang]');
+    if (btn) setLanguage(btn.dataset.lang, { persist: true });
+  });
+
+  // Tout ce qui est produit par le script doit être régénéré : les traductions
+  // du HTML statique ne suffisent pas.
+  document.addEventListener('languagechange', () => {
+    renderLangSwitch();
+    renderDevice();
+    renderModelOptions();
+    renderStats();
+    if (state.lastError) {
+      els.errorMessage.textContent =
+        state.lastError.key ? t(state.lastError.key) : state.lastError.raw;
+    }
+  });
+}
+
+function renderLangSwitch() {
+  els.langSwitch.replaceChildren(...SUPPORTED.map((code) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'lang-btn';
+    btn.dataset.lang = code;
+    btn.textContent = code.toUpperCase();
+    btn.classList.toggle('is-active', code === getLanguage());
+    btn.setAttribute('aria-pressed', String(code === getLanguage()));
+    return btn;
+  }));
 }
 
 /* ------------------------------------------------------------------ */
@@ -425,10 +496,6 @@ els.dropzone.addEventListener('drop', (event) => {
   window.addEventListener(name, (event) => event.preventDefault());
 });
 
-// Le poids annoncé change avec l'accélération choisie.
-els.device.addEventListener('change', renderModelOptions);
-els.model.addEventListener('change', renderModelHint);
-
 els.fileInput.addEventListener('change', () => selectFile(els.fileInput.files[0]));
 els.fileClear.addEventListener('click', clearFile);
 els.runBtn.addEventListener('click', run);
@@ -440,6 +507,17 @@ els.restartBtn.addEventListener('click', () => {
 });
 els.errorDismiss.addEventListener('click', () => hide(els.stepError));
 els.copyBtn.addEventListener('click', copyText);
+
+// Le poids annoncé change avec l'accélération choisie.
+els.device.addEventListener('change', () => {
+  renderDevice();
+  renderModelOptions();
+});
+els.model.addEventListener('change', () => {
+  renderModelHint();
+  renderSummary();
+});
+els.language.addEventListener('change', renderSummary);
 
 document.querySelectorAll('[data-export]').forEach((btn) => {
   btn.addEventListener('click', () => download(btn.dataset.export));
@@ -456,5 +534,15 @@ document.querySelectorAll('.tab').forEach((tab) => {
   });
 });
 
+/* ------------------------------------------------------------------ */
+/* Démarrage                                                            */
+/* ------------------------------------------------------------------ */
+
 initTheme();
-initDevice();
+initLanguage();
+applyTranslations();
+await initDevice();
+// Les menus sont construits après le premier remplissage des <option>.
+enhanceSelects();
+initCursor();
+initReveals();

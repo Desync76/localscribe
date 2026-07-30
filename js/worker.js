@@ -67,28 +67,21 @@ self.addEventListener('message', async (event) => {
       payload: { text: output.text ?? '', chunks: output.chunks ?? [] },
     });
   } catch (error) {
-    self.postMessage({
-      type: 'error',
-      payload: { message: describeError(error) },
-    });
+    self.postMessage({ type: 'error', payload: describeError(error) });
   }
 });
 
-/** Traduit les pannes les plus courantes en langage compréhensible. */
+/**
+ * Classe les pannes courantes. Le worker renvoie une clé de traduction, pas
+ * une phrase : il n'a pas connaissance de la langue de l'interface. `raw`
+ * accompagne les cas non reconnus, pour rester diagnosticable.
+ */
 function describeError(error) {
   const message = String(error?.message ?? error);
 
-  if (/webgpu|gpu adapter|requestDevice/i.test(message)) {
-    return "Ton navigateur n'a pas réussi à utiliser WebGPU. Repasse " +
-           "l'accélération sur « CPU » dans les réglages.";
-  }
-  if (/out of memory|allocation|RangeError/i.test(message)) {
-    return 'Mémoire insuffisante pour ce modèle. Essaie un modèle plus petit ' +
-           '(Base ou Tiny), ou un fichier plus court.';
-  }
-  if (/fetch|network|Failed to load|ERR_/i.test(message)) {
-    return 'Le téléchargement du modèle a échoué. Vérifie ta connexion et réessaie.';
-  }
+  if (/webgpu|gpu adapter|requestDevice/i.test(message)) return { key: 'err.webgpu' };
+  if (/out of memory|allocation|RangeError/i.test(message)) return { key: 'err.memory' };
+  if (/fetch|network|Failed to load|ERR_/i.test(message)) return { key: 'err.network' };
 
-  return message;
+  return { raw: message };
 }

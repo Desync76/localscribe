@@ -1,22 +1,35 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>LocalScribe — Sous-titres automatiques, 100 % dans ton navigateur</title>
-<meta name="description" content="Transcris tes vidéos et audios en sous-titres SRT, VTT ou texte. Tout se passe sur ta machine : aucun fichier n'est envoyé sur Internet. Gratuit, sans compte, sans limite.">
+<title>LocalScribe — Automatic subtitles, entirely in your browser</title>
+<meta name="description" content="Turn any video or audio into SRT, VTT or plain-text subtitles. Everything runs on your machine — no upload, no account, no limits.">
 <meta name="color-scheme" content="light dark">
 <link rel="stylesheet" href="./css/style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230d9488'/><path d='M7 10h18M7 16h18M7 22h11' stroke='white' stroke-width='2.5'/></svg>">
 </head>
 <body>
 
+<!-- Fond ambiant : trois halos très diffus qui dérivent lentement. -->
+<div class="ambient" aria-hidden="true">
+  <span class="ambient-blob a"></span>
+  <span class="ambient-blob b"></span>
+  <span class="ambient-blob c"></span>
+</div>
+
 <header class="masthead">
   <div class="shell masthead-inner">
     <span class="wordmark">LocalScribe</span>
+
     <div class="masthead-meta">
-      <span class="mono-label hide-sm">Transcription locale</span>
-      <button id="theme-toggle" class="theme-btn" type="button" aria-label="Changer de thème">
+      <span class="mono-label hide-sm" data-i18n="header.tagline">Local transcription</span>
+
+      <div class="lang-switch" id="lang-switch" role="group"
+           data-i18n-attr="aria-label:header.language"></div>
+
+      <button id="theme-toggle" class="theme-btn" type="button"
+              data-i18n-attr="aria-label:header.theme">
         <svg class="theme-icon" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
           <g class="icon-sun" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
             <circle cx="12" cy="12" r="4.1"/>
@@ -39,50 +52,43 @@
 
 <main>
 
-  <!-- ═══ OUVERTURE ═══ -->
-  <section class="opening">
-    <div class="shell">
-      <p class="kicker">
-        <span class="kicker-rule" aria-hidden="true"></span>
-        Aucun envoi · Aucun compte · Aucune limite
-      </p>
+  <!-- ═══ SCÈNE : titre + outil, visibles sans défilement ═══ -->
+  <section class="stage">
+    <div class="shell stage-grid">
 
-      <h1 class="display">
-        Tes vidéos<br>
-        en sous-titres,<br>
-        <em>sans quitter<br>ta machine.</em>
-      </h1>
-
-      <div class="opening-foot">
-        <p class="standfirst">
-          Dépose un fichier, récupère un <code>.srt</code>. Le modèle de transcription
-          est téléchargé dans cet onglet et tourne avec ton propre processeur —
-          ton fichier ne part sur aucun serveur.
+      <div class="stage-text">
+        <p class="kicker">
+          <span class="kicker-rule" aria-hidden="true"></span>
+          <span data-i18n="hero.kicker">No upload · No account · No limits</span>
         </p>
+
+        <h1 class="display" data-i18n-html="hero.title">
+          Your videos<br>into subtitles,<br><em>without leaving<br>your machine.</em>
+        </h1>
+
+        <p class="standfirst" data-i18n="hero.standfirst">
+          The transcription model is downloaded into this tab and runs on your own
+          processor. Your file never reaches a server.
+        </p>
+
         <dl class="facts">
-          <div><dt>Formats</dt><dd>SRT · VTT · TXT</dd></div>
-          <div><dt>Langues</dt><dd>99</dd></div>
-          <div><dt>Coût</dt><dd>0 €</dd></div>
+          <div><dt data-i18n="facts.formats">Formats</dt><dd>SRT · VTT · TXT</dd></div>
+          <div><dt data-i18n="facts.languages">Languages</dt><dd>99</dd></div>
+          <div><dt data-i18n="facts.cost">Cost</dt><dd data-i18n="facts.cost.value">Free</dd></div>
         </dl>
       </div>
-    </div>
-  </section>
 
-  <!-- ═══ 01 · FICHIER ═══ -->
-  <section class="block" id="step-file">
-    <div class="shell block-grid">
-      <div class="block-side">
-        <span class="numeral">01</span>
-        <h2 class="block-title">Fichier</h2>
-        <p class="block-hint">Audio ou vidéo, de quelques secondes à plusieurs heures.</p>
-      </div>
+      <div class="stage-tool">
+        <div class="tool-head">
+          <span class="mono-label" data-i18n="tool.drop">Drop</span>
+          <span class="mono-label accent" id="device-badge">—</span>
+        </div>
 
-      <div class="block-body">
         <div id="dropzone" class="dropzone" tabindex="0" role="button"
-             aria-label="Déposer un fichier audio ou vidéo, ou cliquer pour parcourir">
+             data-i18n-attr="aria-label:dz.aria">
           <span class="dz-plus" aria-hidden="true">+</span>
-          <span class="dz-title">Dépose ton fichier</span>
-          <span class="dz-sub mono-label">ou clique pour parcourir</span>
+          <span class="dz-title" data-i18n="dz.title">Drop your file</span>
+          <span class="dz-sub mono-label" data-i18n="dz.sub">or click to browse</span>
           <span class="dz-formats">MP3 · WAV · M4A · OGG · FLAC · MP4 · WebM</span>
           <input type="file" id="file-input" accept="audio/*,video/*" hidden>
         </div>
@@ -92,122 +98,72 @@
             <p class="file-name" id="file-name"></p>
             <p class="file-detail mono-label" id="file-detail"></p>
           </div>
-          <button type="button" class="link-btn" id="file-clear">Changer</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ 02 · RÉGLAGES ═══ -->
-  <section class="block" id="step-options">
-    <div class="shell block-grid">
-      <div class="block-side">
-        <span class="numeral">02</span>
-        <h2 class="block-title">Réglages</h2>
-        <p class="block-hint">Les valeurs par défaut conviennent dans la plupart des cas.</p>
-      </div>
-
-      <div class="block-body">
-        <div class="fields">
-          <label class="field">
-            <span class="field-label mono-label">Modèle</span>
-            <select id="opt-model"></select>
-            <span class="field-hint" id="model-hint">Téléchargé une fois, puis gardé en cache.</span>
-          </label>
-
-          <label class="field">
-            <span class="field-label mono-label">Langue parlée</span>
-            <select id="opt-language">
-              <option value="">Détection automatique</option>
-              <option value="fr" selected>Français</option>
-              <option value="en">Anglais</option>
-              <option value="es">Espagnol</option>
-              <option value="de">Allemand</option>
-              <option value="it">Italien</option>
-              <option value="pt">Portugais</option>
-              <option value="nl">Néerlandais</option>
-              <option value="ru">Russe</option>
-              <option value="ar">Arabe</option>
-              <option value="ja">Japonais</option>
-              <option value="ko">Coréen</option>
-              <option value="zh">Chinois</option>
-            </select>
-            <span class="field-hint">La préciser améliore nettement le résultat.</span>
-          </label>
-
-          <label class="field">
-            <span class="field-label mono-label">Tâche</span>
-            <select id="opt-task">
-              <option value="transcribe" selected>Transcrire</option>
-              <option value="translate">Traduire vers l'anglais</option>
-            </select>
-            <span class="field-hint">Whisper ne traduit que vers l'anglais.</span>
-          </label>
-
-          <label class="field">
-            <span class="field-label mono-label">Accélération</span>
-            <select id="opt-device">
-              <option value="auto" selected>Automatique</option>
-              <option value="webgpu">WebGPU</option>
-              <option value="wasm">Processeur</option>
-            </select>
-            <span class="field-hint" id="device-hint">Détection…</span>
-          </label>
+          <button type="button" class="link-btn" id="file-clear" data-i18n="file.change">Change</button>
         </div>
 
         <button type="button" class="action" id="run-btn" disabled>
-          <span>Lancer la transcription</span>
+          <span data-i18n="run.label">Start transcription</span>
           <span class="action-arrow" aria-hidden="true">→</span>
         </button>
+
+        <p class="tool-foot">
+          <span id="summary-line"></span>
+          <a href="#step-options" class="tool-link" data-i18n="tool.edit">Change</a>
+        </p>
       </div>
+
     </div>
   </section>
 
-  <!-- ═══ 03 · PROGRESSION ═══ -->
+  <!-- ═══ PROGRESSION ═══ -->
   <section class="block" id="step-progress" hidden>
     <div class="shell block-grid">
       <div class="block-side">
-        <span class="numeral">03</span>
-        <h2 class="block-title" id="progress-title">Préparation</h2>
+        <span class="numeral is-accent" data-i18n="progress.stage">Running</span>
+        <h2 class="block-title" id="progress-title">Preparing</h2>
       </div>
 
       <div class="block-body">
         <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
         <p class="progress-detail" id="progress-detail"></p>
         <div id="download-list" class="download-list"></div>
-        <button type="button" class="link-btn" id="cancel-btn">Annuler</button>
+        <button type="button" class="link-btn" id="cancel-btn" data-i18n="progress.cancel">Cancel</button>
       </div>
     </div>
   </section>
 
-  <!-- ═══ 04 · RÉSULTAT ═══ -->
+  <!-- ═══ RÉSULTAT ═══ -->
   <section class="block" id="step-result" hidden>
     <div class="shell block-grid">
       <div class="block-side">
-        <span class="numeral is-accent">04</span>
-        <h2 class="block-title">Résultat</h2>
+        <span class="numeral is-accent" data-i18n="result.stage">Output</span>
+        <h2 class="block-title" data-i18n="result.title">Result</h2>
         <p class="block-hint mono-label" id="result-stats"></p>
       </div>
 
       <div class="block-body">
         <div class="export-row">
           <button type="button" class="action action-inline" data-export="srt">
-            <span>Télécharger .srt</span><span class="action-arrow" aria-hidden="true">↓</span>
+            <span data-i18n="result.download">Download .srt</span>
+            <span class="action-arrow" aria-hidden="true">↓</span>
           </button>
           <button type="button" class="chip" data-export="vtt">.vtt</button>
           <button type="button" class="chip" data-export="txt">.txt</button>
-          <button type="button" class="chip" id="copy-btn">Copier</button>
+          <button type="button" class="chip" id="copy-btn" data-i18n="result.copy">Copy</button>
         </div>
 
         <div class="tabs" role="tablist">
-          <button class="tab is-active" type="button" role="tab" data-view="segments">Segments</button>
-          <button class="tab" type="button" role="tab" data-view="plain">Texte brut</button>
+          <button class="tab is-active" type="button" role="tab" data-view="segments"
+                  data-i18n="tabs.segments">Segments</button>
+          <button class="tab" type="button" role="tab" data-view="plain"
+                  data-i18n="tabs.plain">Plain text</button>
         </div>
 
         <div id="view-segments" class="segments"></div>
         <pre id="view-plain" class="plain-text" hidden></pre>
 
-        <button type="button" class="link-btn" id="restart-btn">Transcrire un autre fichier</button>
+        <button type="button" class="link-btn" id="restart-btn"
+                data-i18n="result.restart">Transcribe another file</button>
       </div>
     </div>
   </section>
@@ -216,36 +172,100 @@
   <section class="block block-error" id="step-error" hidden>
     <div class="shell block-grid">
       <div class="block-side">
-        <span class="numeral is-error">!</span>
-        <h2 class="block-title">Erreur</h2>
+        <span class="numeral is-error" data-i18n="error.stage">Error</span>
+        <h2 class="block-title" data-i18n="error.title">That didn't work</h2>
       </div>
       <div class="block-body">
         <p class="error-text" id="error-message"></p>
-        <button type="button" class="link-btn" id="error-dismiss">Recommencer</button>
+        <button type="button" class="link-btn" id="error-dismiss"
+                data-i18n="error.dismiss">Start over</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ RÉGLAGES (optionnels) ═══ -->
+  <section class="block" id="step-options" data-reveal>
+    <div class="shell block-grid">
+      <div class="block-side">
+        <span class="numeral" data-i18n="options.stage">Optional</span>
+        <h2 class="block-title" data-i18n="options.title">Settings</h2>
+        <p class="block-hint" data-i18n="options.hint">The defaults are fine in most cases.</p>
+      </div>
+
+      <div class="block-body">
+        <div class="fields">
+          <div class="field">
+            <span class="field-label mono-label" data-i18n="field.model">Model</span>
+            <select id="opt-model"></select>
+            <span class="field-hint" id="model-hint"></span>
+          </div>
+
+          <div class="field">
+            <span class="field-label mono-label" data-i18n="field.language">Spoken language</span>
+            <select id="opt-language">
+              <option value="" data-i18n="lang.auto">Auto-detect</option>
+              <option value="fr" selected data-i18n="lang.fr">French</option>
+              <option value="en" data-i18n="lang.en">English</option>
+              <option value="es" data-i18n="lang.es">Spanish</option>
+              <option value="de" data-i18n="lang.de">German</option>
+              <option value="it" data-i18n="lang.it">Italian</option>
+              <option value="pt" data-i18n="lang.pt">Portuguese</option>
+              <option value="nl" data-i18n="lang.nl">Dutch</option>
+              <option value="ru" data-i18n="lang.ru">Russian</option>
+              <option value="ar" data-i18n="lang.ar">Arabic</option>
+              <option value="ja" data-i18n="lang.ja">Japanese</option>
+              <option value="ko" data-i18n="lang.ko">Korean</option>
+              <option value="zh" data-i18n="lang.zh">Chinese</option>
+            </select>
+            <span class="field-hint" data-i18n="field.language.hint"></span>
+          </div>
+
+          <div class="field">
+            <span class="field-label mono-label" data-i18n="field.task">Task</span>
+            <select id="opt-task">
+              <option value="transcribe" selected data-i18n="task.transcribe">Transcribe</option>
+              <option value="translate" data-i18n="task.translate">Translate to English</option>
+            </select>
+            <span class="field-hint" data-i18n="field.task.hint"></span>
+          </div>
+
+          <div class="field">
+            <span class="field-label mono-label" data-i18n="field.device">Acceleration</span>
+            <select id="opt-device">
+              <option value="auto" selected data-i18n="device.auto">Automatic</option>
+              <option value="webgpu" data-i18n="device.webgpu">WebGPU</option>
+              <option value="wasm" data-i18n="device.cpu">Processor</option>
+            </select>
+            <span class="field-hint" id="device-hint"></span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- ═══ ARGUMENTAIRE ═══ -->
-  <section class="colophon">
+  <section class="colophon" data-reveal>
     <div class="shell">
-      <p class="kicker"><span class="kicker-rule" aria-hidden="true"></span> Le principe</p>
+      <p class="kicker">
+        <span class="kicker-rule" aria-hidden="true"></span>
+        <span data-i18n="colophon.kicker">How it works</span>
+      </p>
 
       <div class="colophon-grid">
         <article>
           <span class="numeral small">I</span>
-          <h3>Rien ne sort de ta machine</h3>
-          <p>Il n'y a pas de serveur. Le modèle est téléchargé une fois puis calcule en local. Coupe ta connexion après le chargement : ça fonctionne toujours.</p>
+          <h3 data-i18n="colophon.1.title"></h3>
+          <p data-i18n="colophon.1.body"></p>
         </article>
         <article>
           <span class="numeral small">II</span>
-          <h3>Ni compte, ni quota</h3>
-          <p>Aucune inscription, aucune limite de durée ni de nombre de fichiers. Un podcast de deux heures passe aussi bien qu'un mémo de trente secondes.</p>
+          <h3 data-i18n="colophon.2.title"></h3>
+          <p data-i18n="colophon.2.body"></p>
         </article>
         <article>
           <span class="numeral small">III</span>
-          <h3>Whisper, en libre accès</h3>
-          <p>Le moteur est le modèle de reconnaissance vocale publié par OpenAI, exécuté ici par transformers.js directement dans le navigateur.</p>
+          <h3 data-i18n="colophon.3.title"></h3>
+          <p data-i18n="colophon.3.body"></p>
         </article>
       </div>
     </div>

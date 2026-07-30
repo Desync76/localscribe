@@ -17,7 +17,8 @@ export async function decodeAudioFile(file) {
 
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (!AudioCtx) {
-    throw new Error("Ton navigateur ne gère pas l'API Web Audio.");
+    // Les libellés sont résolus par l'appelant : ce module ignore la langue.
+    throw new Error('err.noWebAudio');
   }
 
   const context = new AudioCtx({ sampleRate: TARGET_SAMPLE_RATE });
@@ -26,10 +27,7 @@ export async function decodeAudioFile(file) {
   try {
     buffer = await context.decodeAudioData(arrayBuffer);
   } catch {
-    throw new Error(
-      "Impossible de lire l'audio de ce fichier. Le format ou le codec n'est " +
-      'pas géré par ton navigateur — convertis-le en MP3 ou en WAV et réessaie.'
-    );
+    throw new Error('err.decode');
   } finally {
     context.close();
   }
